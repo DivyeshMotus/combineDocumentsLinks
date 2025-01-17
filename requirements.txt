@@ -1,0 +1,15 @@
+Flask==3.0.0
+Werkzeug==3.0.6
+itsdangerous==2.2.0
+Jinja2==3.1.5
+gdown==4.5.1
+PyPDF2==3.0.1
+google-api-python-client==2.159.0
+google-auth==2.37.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+httplib2==0.22.0
+python-dotenv==1.0.1
+tqdm==4.67.1
+protobuf==5.29.3
+uritemplate==4.1.1

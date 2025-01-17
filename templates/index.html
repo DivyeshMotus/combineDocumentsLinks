@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input, button {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Combine PDF Files</h1>
+        <form id="mergeForm">
+            {% for i in range(1, 8) %}
+                <label for="link{{ i }}">Link {{ i }}</label>
+                <input type="text" id="link{{ i }}" name="link{{ i }}" placeholder="Enter Google Drive link {{ i }}">
+            {% endfor %}
+            <button type="submit">Combine Files</button>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        document.getElementById('mergeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData
+            });
+            const result = document.getElementById('result');
+            if (response.ok) {
+                const data = await response.json();
+                result.innerHTML = `<p>Merged File Link: <a href="${data.link}" target="_blank">${data.link}</a></p>`;
+            } else {
+                const error = await response.json();
+                result.innerHTML = `<p style="color: red;">Error: ${error.error}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
