@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.discovery import build
-import gdown
+from googleapiclient.http import MediaIoBaseDownload
 from PyPDF2 import PdfMerger
+import re
 
 load_dotenv()
 
@@ -30,15 +31,37 @@ def create_folder():
     os.chmod(folder_path, 0o777)
     return folder_path
 
-def download_files(links, output_path):
+def extract_file_id(drive_link):
+    match = re.search(r'/d/([a-zA-Z0-9_-]+)', drive_link)
+    if match:
+        return match.group(1)
+    else:
+        raise ValueError("Invalid Google Drive link format. Ensure it follows 'https://drive.google.com/file/d/FILE_ID/view'.")
+
+def download_pdf_from_drive(drive_service, file_id, output_path, file_counter):
+    try:
+        request = drive_service.files().get_media(fileId=file_id)
+        file_name = f"{output_path}/{file_counter}.pdf"
+        with open(file_name, 'wb') as pdf_file:
+            downloader = MediaIoBaseDownload(pdf_file, request)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+                print(f"Download Progress: {int(status.progress() * 100)}%")
+        print(f"File downloaded successfully: {file_name}")
+        return file_name
+    except Exception as e:
+        print(f"Error downloading file: {e}")
+        return None
+
+def download_files(drive_service, links, output_path):
     file_counter = 1
     for link in links:
         if "drive.google.com" in link:
-            file_id = link.split("/d/")[1].split("/")[0]
-            download_url = f"https://drive.google.com/uc?id={file_id}"
+            file_id = extract_file_id(link)
+            download_pdf_from_drive(drive_service, file_id, output_path, file_counter)
         else:
             raise ValueError("Invalid Google Drive link.")
-        gdown.download(download_url, f"./{output_path}/{file_counter}.pdf", quiet=False)
         file_counter += 1
 
 def merge_pdfs_in_folder(folder_path):
@@ -69,7 +92,7 @@ def main():
     links = enter_links()
     drive_service = authenticate_services()
     folder_path = create_folder()
-    download_files(links, folder_path)
+    download_files(drive_service, links, folder_path)
     merged_pdf_path = merge_pdfs_in_folder(folder_path)
     shareable_link = upload_file_to_drive(drive_service, merged_pdf_path, "combinedDoc.pdf", FOLDER_ID)
     print(f"Final Shareable Link: {shareable_link}")
