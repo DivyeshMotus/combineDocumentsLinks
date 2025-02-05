@@ -71,31 +71,43 @@ def upload_to_drive(drive_service, file_path, file_name):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Get links from the form
-        links = [request.form.get(f'link{i}') for i in range(1, 8)]
-        links = [link.strip() for link in links if link]  # Remove empty links
+        try:
+            # Get links from the form
+            links = [request.form.get(f'link{i}') for i in range(1, 8)]
+            links = [link.strip() for link in links if link]  # Remove empty links
 
-        # Create a folder for downloads
-        output_folder = "downloads"
-        os.makedirs(output_folder, exist_ok=True)
+            if not links:
+                return jsonify({'error': 'No valid links provided'}), 400  # Return JSON error
 
-        drive_service = authenticate_drive()
+            # Create a folder for downloads
+            output_folder = "downloads"
+            os.makedirs(output_folder, exist_ok=True)
 
-        # Download PDFs
-        file_counter = 1
-        for link in links:
-            file_id = extract_file_id(link)
-            if file_id:
-                download_pdf_from_drive(drive_service, file_id, output_folder, file_counter)
-                file_counter += 1
+            drive_service = authenticate_drive()
 
-        # Merge PDFs
-        merged_pdf_path = merge_pdfs(output_folder)
+            # Download PDFs
+            file_counter = 1
+            for link in links:
+                file_id = extract_file_id(link)
+                if file_id:
+                    result = download_pdf_from_drive(drive_service, file_id, output_folder, file_counter)
+                    if not result:
+                        return jsonify({'error': f'Failed to download file {file_id}'}), 500
+                    file_counter += 1
 
-        # Upload merged file to Google Drive
-        shareable_link = upload_to_drive(drive_service, merged_pdf_path, "combinedDoc.pdf")
+            # Merge PDFs
+            merged_pdf_path = merge_pdfs(output_folder)
 
-        return jsonify({'link': shareable_link}) if shareable_link else jsonify({'error': 'Upload failed'}), 500
+            # Upload merged file to Google Drive
+            shareable_link = upload_to_drive(drive_service, merged_pdf_path, "combinedDoc.pdf")
+
+            if shareable_link:
+                return jsonify({'link': shareable_link})  # Valid JSON response
+            else:
+                return jsonify({'error': 'Upload failed'}), 500  # Error response if upload fails
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500  # Catch all errors
 
     return render_template('index.html')
 
