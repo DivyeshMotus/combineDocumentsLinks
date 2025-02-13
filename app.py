@@ -26,8 +26,6 @@ def delete_folder(folder_path):
             item_path = os.path.join(folder_path, item)
             if os.path.isfile(item_path):
                 os.remove(item_path)
-            elif os.path.isdir(item_path):
-                delete_folder(item_path)
         os.rmdir(folder_path)
     else:
         print("The folder does not exist")
