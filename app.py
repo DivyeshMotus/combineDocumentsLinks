@@ -20,6 +20,18 @@ def authenticate_drive():
     credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
     return build('drive', 'v3', credentials=credentials)
 
+def delete_folder(folder_path):
+    if os.path.exists(folder_path):
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                delete_folder(item_path)
+        os.rmdir(folder_path)
+    else:
+        print("The folder does not exist")
+
 # Function to extract Google Drive file ID from link
 def extract_file_id(drive_link):
     match = re.search(r'/d/([a-zA-Z0-9_-]+)', drive_link)
@@ -79,7 +91,7 @@ def index():
             if not links:
                 return jsonify({'error': 'No valid links provided'}), 400  # Return JSON error
 
-            # Create a folder for downloads
+            delete_folder("downloads")
             output_folder = "downloads"
             os.makedirs(output_folder, exist_ok=True)
 
