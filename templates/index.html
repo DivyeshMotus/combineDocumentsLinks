@@ -48,7 +48,7 @@
         document.getElementById('mergeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const response = await fetch('/', {
+            const response = await fetch('https://two.motusnova.com/MoDoc/', {
                 method: 'POST',
                 body: formData
             });
